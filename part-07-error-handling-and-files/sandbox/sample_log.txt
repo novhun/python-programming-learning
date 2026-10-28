@@ -1,0 +1,2 @@
+2026-10-28 INFO: Application booted successfully.
+2026-10-28 INFO: Health check passed.

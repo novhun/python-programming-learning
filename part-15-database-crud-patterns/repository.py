@@ -10,7 +10,7 @@ Demonstrates:
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Generic, Sequence, Type, TypeVar
+from typing import Generic, Optional, Sequence, Type, TypeVar
 from sqlalchemy import Boolean, DateTime, Float, Integer, String, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
@@ -29,7 +29,7 @@ class Product(Base):
     price: Mapped[float] = mapped_column(Float, nullable=False)
     stock: Mapped[int] = mapped_column(Integer, default=0)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def __repr__(self) -> str:

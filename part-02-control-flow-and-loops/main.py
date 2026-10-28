@@ -82,20 +82,43 @@ def demo_pattern_matching() -> None:
         "unknown_action",
     ]
 
-    for raw_cmd in commands:
-        parts = raw_cmd.split()
-        match parts:
-            case ["help"]:
+    import sys
+
+    if sys.version_info >= (3, 10):
+        # Native Python 3.10+ Structural Pattern Matching
+        pattern_code = """
+for raw_cmd in commands:
+    parts = raw_cmd.split()
+    match parts:
+        case ["help"]:
+            print(f"Command '{raw_cmd}' -> Displaying help manual.")
+        case ["go", direction]:
+            print(f"Command '{raw_cmd}' -> Moving player to {direction.upper()}.")
+        case ["teleport", x, y]:
+            print(f"Command '{raw_cmd}' -> Teleporting coordinates to X={x}, Y={y}.")
+        case ["attack", target, "with", weapon] if weapon == "excalibur":
+            print(f"Command '{raw_cmd}' -> CRITICAL HIT! Attacking {target} with legendary {weapon}!")
+        case ["attack", target, "with", weapon]:
+            print(f"Command '{raw_cmd}' -> Regular attack on {target} using {weapon}.")
+        case _:
+            print(f"Command '{raw_cmd}' -> Unrecognized action.")
+"""
+        exec(pattern_code, {"commands": commands, "print": print})
+    else:
+        print("  [Python 3.9 Compatibility Mode - match-case requires Python 3.10+]")
+        for raw_cmd in commands:
+            parts = raw_cmd.split()
+            if parts == ["help"]:
                 print(f"Command '{raw_cmd}' -> Displaying help manual.")
-            case ["go", direction]:
-                print(f"Command '{raw_cmd}' -> Moving player to {direction.upper()}.")
-            case ["teleport", x, y]:
-                print(f"Command '{raw_cmd}' -> Teleporting coordinates to X={x}, Y={y}.")
-            case ["attack", target, "with", weapon] if weapon == "excalibur":
-                print(f"Command '{raw_cmd}' -> CRITICAL HIT! Attacking {target} with legendary {weapon}!")
-            case ["attack", target, "with", weapon]:
-                print(f"Command '{raw_cmd}' -> Regular attack on {target} using {weapon}.")
-            case _:
+            elif len(parts) == 2 and parts[0] == "go":
+                print(f"Command '{raw_cmd}' -> Moving player to {parts[1].upper()}.")
+            elif len(parts) == 3 and parts[0] == "teleport":
+                print(f"Command '{raw_cmd}' -> Teleporting coordinates to X={parts[1]}, Y={parts[2]}.")
+            elif len(parts) == 4 and parts[0] == "attack" and parts[2] == "with" and parts[3] == "excalibur":
+                print(f"Command '{raw_cmd}' -> CRITICAL HIT! Attacking {parts[1]} with legendary {parts[3]}!")
+            elif len(parts) == 4 and parts[0] == "attack" and parts[2] == "with":
+                print(f"Command '{raw_cmd}' -> Regular attack on {parts[1]} using {parts[3]}.")
+            else:
                 print(f"Command '{raw_cmd}' -> Unrecognized action.")
 
 

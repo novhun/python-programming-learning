@@ -5,7 +5,14 @@ Run using:
 python3 -m unittest part-10-modern-tooling-and-best-practices/test_calculator.py
 """
 
+from pathlib import Path
+import sys
 import unittest
+
+BASE_DIR = Path(__file__).resolve().parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 from calculator import Calculator
 
 

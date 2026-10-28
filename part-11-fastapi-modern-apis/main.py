@@ -12,10 +12,10 @@ This file provides:
 
 from __future__ import annotations
 import sys
-from typing import Annotated
+from typing import Annotated, Optional
 
 try:
-    from fastapi import Depends, FastAPI, HTTPException, Header, Query, status
+    from fastapi import Depends, FastAPI, HTTPException, Header, Query, Response, status
     from fastapi.testclient import TestClient
     from pydantic import BaseModel, Field
     FASTAPI_AVAILABLE = True
@@ -73,7 +73,7 @@ if FASTAPI_AVAILABLE:
 
     # --- Dependency Injection ---
     async def verify_auth_token(
-        x_api_key: Annotated[str | None, Header(description="Secret API Key")] = None
+        x_api_key: Annotated[Optional[str], Header(description="Secret API Key")] = None
     ) -> str:
         """Dependency that enforces API key authentication for protected endpoints."""
         if x_api_key != "secret-python-key":
@@ -97,7 +97,7 @@ if FASTAPI_AVAILABLE:
     async def list_courses(
         skip: int = Query(0, ge=0, description="Items to skip for pagination"),
         limit: int = Query(10, ge=1, le=50, description="Maximum items to return"),
-        tag: str | None = Query(None, description="Optional tag filter"),
+        tag: Optional[str] = Query(None, description="Optional tag filter"),
     ) -> list[dict]:
         """List courses with pagination and optional filtering."""
         items = list(db_courses.values())
@@ -140,10 +140,11 @@ if FASTAPI_AVAILABLE:
     @app.delete(
         "/api/courses/{course_id}",
         status_code=status.HTTP_204_NO_CONTENT,
+        response_class=Response,
         tags=["Courses"],
         dependencies=[Depends(verify_auth_token)],
     )
-    async def delete_course(course_id: int) -> None:
+    async def delete_course(course_id: int) -> Response:
         """Protected endpoint: Delete an existing course (Requires X-API-Key)."""
         if course_id not in db_courses:
             raise HTTPException(
@@ -151,61 +152,58 @@ if FASTAPI_AVAILABLE:
                 detail=f"Course with ID {course_id} does not exist.",
             )
         del db_courses[course_id]
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # --- In-Process Test Driver & Demonstration ---
-def run_demonstration() -> None:
-    if not FASTAPI_AVAILABLE:
-        print("=" * 60)
-        print("  FastAPI / Pydantic is not installed in the current environment.")
-        print("  To run this module, install the dependencies:")
-        print("    pip install -r requirements.txt")
-        print("  Or:")
-        print("    pip install fastapi uvicorn httpx pydantic")
-        print("=" * 60)
-        return
+async def async_run_demonstration() -> None:
+    from httpx import ASGITransport, AsyncClient
 
     print("╔═══════════════════════════════════════════════════════╗")
     print("║          Part 11: FastAPI & Pydantic Demo             ║")
     print("╚═══════════════════════════════════════════════════════╝")
 
-    client = TestClient(app)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # 1. Health check
+        print("\n1. Testing GET / (Root Health Check):")
+        res = await client.get("/")
+        print(f"  Status: {res.status_code} | Body: {res.json()}")
 
-    # 1. Health check
-    print("\n1. Testing GET / (Root Health Check):")
-    res = client.get("/")
-    print(f"  Status: {res.status_code} | Body: {res.json()}")
+        # 2. List initial courses
+        print("\n2. Testing GET /api/courses (List all courses):")
+        res = await client.get("/api/courses")
+        print(f"  Status: {res.status_code}")
+        for item in res.json():
+            print(f"   - [#{item['id']}] {item['title']} (${item['price']:.2f})")
 
-    # 2. List initial courses
-    print("\n2. Testing GET /api/courses (List all courses):")
-    res = client.get("/api/courses")
-    print(f"  Status: {res.status_code}")
-    for item in res.json():
-        print(f"   - [#{item['id']}] {item['title']} (${item['price']:.2f})")
+        # 3. Create course without auth token (Expected 401)
+        print("\n3. Testing POST /api/courses without Auth header (Expected 401):")
+        res = await client.post("/api/courses", json={"title": "Unauthorized Course", "instructor": "Hacker", "price": 10.0})
+        print(f"  Status: {res.status_code} | Detail: {res.json().get('detail')}")
 
-    # 3. Create course without auth token (Expected 401)
-    print("\n3. Testing POST /api/courses without Auth header (Expected 401):")
-    res = client.post("/api/courses", json={"title": "Unauthorized Course", "instructor": "Hacker", "price": 10.0})
-    print(f"  Status: {res.status_code} | Detail: {res.json().get('detail')}")
+        # 4. Create course with valid Auth token
+        print("\n4. Testing POST /api/courses with valid X-API-Key header:")
+        headers = {"X-API-Key": "secret-python-key"}
+        new_payload = {
+            "title": "FastAPI & Async Microservices",
+            "instructor": "Sebastián Ramírez",
+            "price": 79.99,
+            "tags": ["fastapi", "asyncio", "python"],
+        }
+        res = await client.post("/api/courses", json=new_payload, headers=headers)
+        print(f"  Status: {res.status_code} (Created) | Returned Object: {res.json()}")
 
-    # 4. Create course with valid Auth token
-    print("\n4. Testing POST /api/courses with valid X-API-Key header:")
-    headers = {"X-API-Key": "secret-python-key"}
-    new_payload = {
-        "title": "FastAPI & Async Microservices",
-        "instructor": "Sebastián Ramírez",
-        "price": 79.99,
-        "tags": ["fastapi", "asyncio", "python"],
-    }
-    res = client.post("/api/courses", json=new_payload, headers=headers)
-    print(f"  Status: {res.status_code} (Created) | Returned Object: {res.json()}")
+        # 5. Validation failure demonstration (Negative price)
+        print("\n5. Testing Pydantic validation (Negative price payload -> Expected 422):")
+        invalid_payload = {"title": "Invalid Price", "instructor": "Tester", "price": -15.0}
+        res = await client.post("/api/courses", json=invalid_payload, headers=headers)
+        print(f"  Status: {res.status_code} (Unprocessable Entity)")
+        print(f"  Validation message: {res.json()['detail'][0]['msg']}")
 
-    # 5. Validation failure demonstration (Negative price)
-    print("\n5. Testing Pydantic validation (Negative price payload -> Expected 422):")
-    invalid_payload = {"title": "Invalid Price", "instructor": "Tester", "price": -15.0}
-    res = client.post("/api/courses", json=invalid_payload, headers=headers)
-    print(f"  Status: {res.status_code} (Unprocessable Entity)")
-    print(f"  Validation message: {res.json()['detail'][0]['msg']}")
+        # 6. Delete course
+        print("\n6. Testing DELETE /api/courses/1 (Protected deletion):")
+        res_del = await client.delete("/api/courses/1", headers=headers)
+        print(f"  Status: {res_del.status_code} (No Content)")
 
     print("\n" + "=" * 60)
     print("🎉 FastAPI in-process tests completed successfully!")
@@ -214,6 +212,19 @@ def run_demonstration() -> None:
     print("   uvicorn main:app --reload --port 8000")
     print("   Visit: http://127.0.0.1:8000/docs")
     print("=" * 60)
+
+
+def run_demonstration() -> None:
+    if not FASTAPI_AVAILABLE:
+        print("=" * 60)
+        print("  FastAPI / Pydantic is not installed in the current environment.")
+        print("  To run this module, install the dependencies:")
+        print("    pip install -r requirements.txt")
+        print("=" * 60)
+        return
+
+    import asyncio
+    asyncio.run(async_run_demonstration())
 
 
 if __name__ == "__main__":

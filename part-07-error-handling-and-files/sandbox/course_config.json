@@ -1,0 +1,12 @@
+{
+  "course_title": "Python Programming Mastery",
+  "version": "2.0.0",
+  "modules_count": 10,
+  "is_published": true,
+  "tags": [
+    "python",
+    "oop",
+    "asyncio",
+    "testing"
+  ]
+}

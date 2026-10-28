@@ -11,8 +11,9 @@ This runnable script demonstrates:
 6. Module importing and interaction with math_operations.py
 """
 
+from __future__ import annotations
 from functools import reduce
-from typing import Callable
+from typing import Callable, Optional
 
 # Import functions from our custom module
 from math_operations import calculate_mean, calculate_median, factorial

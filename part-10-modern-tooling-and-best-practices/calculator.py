@@ -29,7 +29,8 @@ class Calculator:
     def power(self, base: float, exponent: float) -> float:
         return math.pow(base, exponent)
 
-    def square_root(self, n: float) -> float:
+    def square_root(self, n: float) -> float | int:
         if n < 0:
             raise ValueError("Square root is not defined for negative real numbers.")
-        return math.isqrt(int(n)) if n.is_integer() and n >= 0 and math.isqrt(int(n)) ** 2 == int(n) else math.sqrt(n)
+        root = math.sqrt(n)
+        return int(root) if root.is_integer() else root
