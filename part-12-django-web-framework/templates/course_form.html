@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit Course{% else %}Add New Course{% endif %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .form-container {
+        max-width: 650px;
+        margin: 2rem auto;
+        background: var(--surface-color);
+        border: 1px solid var(--surface-border);
+        border-radius: var(--radius-lg);
+        padding: 2.5rem;
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+    }
+
+    .form-header {
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--surface-border);
+        padding-bottom: 1.25rem;
+    }
+
+    .form-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.25rem;
+        color: #fff;
+    }
+
+    .form-subtitle {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #cbd5e1;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .form-input {
+        width: 100%;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid var(--surface-border);
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1rem;
+        color: #fff;
+        font-family: inherit;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+    }
+
+    .checkbox-input {
+        width: 1.2rem;
+        height: 1.2rem;
+        accent-color: var(--primary);
+        cursor: pointer;
+    }
+
+    .form-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--surface-border);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1 class="form-title">
+            {% if is_edit %}✏️ Edit Course{% else %}➕ Create New Course{% endif %}
+        </h1>
+        <p class="form-subtitle">
+            {% if is_edit %}Update course details in the catalog database{% else %}Add a new curriculum course to the catalog database{% endif %}
+        </p>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label class="form-label" for="title">Course Title</label>
+            <input 
+                type="text" 
+                id="title" 
+                name="title" 
+                value="{{ course.title|default:'' }}" 
+                required 
+                class="form-input" 
+                placeholder="e.g. Asynchronous Microservices with Python"
+            >
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="instructor">Lead Instructor</label>
+            <input 
+                type="text" 
+                id="instructor" 
+                name="instructor" 
+                value="{{ course.instructor|default:'' }}" 
+                required 
+                class="form-input" 
+                placeholder="e.g. Alex Rivera"
+            >
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="price">Price ($ USD)</label>
+                <input 
+                    type="number" 
+                    step="0.01" 
+                    id="price" 
+                    name="price" 
+                    value="{{ course.price|default:'49.99' }}" 
+                    required 
+                    class="form-input"
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="category">Category</label>
+                <input 
+                    type="text" 
+                    id="category" 
+                    name="category" 
+                    value="{{ course.category|default:'Backend' }}" 
+                    required 
+                    class="form-input" 
+                    placeholder="e.g. Backend, AI, Database"
+                >
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input 
+                    type="checkbox" 
+                    id="is_published" 
+                    name="is_published" 
+                    class="checkbox-input"
+                    {% if not is_edit or course.is_published %}checked{% endif %}
+                >
+                <label for="is_published" style="color: #e2e8f0; font-size: 0.95rem; cursor: pointer;">
+                    Publish immediately (visible to students)
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {% if is_edit %}💾 Update Course{% else %}🚀 Create Course{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

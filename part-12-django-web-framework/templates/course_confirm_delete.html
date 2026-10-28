@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Course{% endblock %}
+
+{% block extra_head %}
+<style>
+    .delete-container {
+        max-width: 550px;
+        margin: 4rem auto;
+        background: var(--surface-color);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: var(--radius-lg);
+        padding: 2.5rem;
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+        text-align: center;
+    }
+
+    .warning-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .delete-title {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #f87171;
+        margin-bottom: 0.75rem;
+    }
+
+    .delete-desc {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+
+    .course-preview-box {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid var(--surface-border);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+
+    .delete-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-container">
+    <div class="warning-icon">⚠️</div>
+    <h1 class="delete-title">Confirm Deletion</h1>
+    <p class="delete-desc">
+        Are you sure you want to permanently delete this course? This action cannot be undone.
+    </p>
+
+    <div class="course-preview-box">
+        <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.25rem;">{{ course.title }}</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">
+            Instructor: {{ course.instructor }} &bull; Price: ${{ course.price }} &bull; Category: {{ course.category }}
+        </p>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="delete-actions">
+            <a href="/" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-danger">🗑️ Yes, Delete Course</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
